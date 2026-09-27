@@ -1,6 +1,8 @@
 package com.example.myapplication.core.codec
 
+import java.io.ByteArrayOutputStream
 import java.util.Locale
+import java.util.zip.Deflater
 
 class RetroSpeechCodec {
 
@@ -15,24 +17,56 @@ class RetroSpeechCodec {
         "LOCATION" to "L1",
         "RESPONDER" to "RS1",
         "BLACKOUT" to "B1",
-        "EVACUATE" to "EV1"
+        "EVACUATE" to "EV1",
+        "ASSISTANCE" to "A1",
+        "SECTOR" to "S1",
+        "BRIDGE" to "BR1",
+        "IMMEDIATE" to "I1",
+        "WATER" to "W1",
+        "RISING" to "R2"
     )
 
     private val reverseDictionaryMap = dictionaryMap.entries.associate { (k, v) -> v to k }
 
-    fun encode(text: String): Pair<ByteArray, Float> {
+    /**
+     * Performs actual byte-level compression using dictionary substitution + Deflate/zlib compression.
+     * Returns Triple(compressedBytes, originalByteSize, compressedByteSize).
+     */
+    fun encode(text: String): Triple<ByteArray, Int, Int> {
         val originalBytes = text.toByteArray(Charsets.UTF_8)
+        val originalSize = originalBytes.size
+
+        if (originalSize == 0) {
+            return Triple(ByteArray(0), 0, 0)
+        }
+
         var compressedText = text.uppercase(Locale.ROOT)
         for ((word, token) in dictionaryMap) {
             compressedText = compressedText.replace(word, "{$token}")
         }
-        val compressedBytes = compressedText.toByteArray(Charsets.UTF_8)
-        val ratio = if (originalBytes.isNotEmpty()) {
-            compressedBytes.size.toFloat() / originalBytes.size.toFloat()
-        } else {
-            1.0f
+        val dictBytes = compressedText.toByteArray(Charsets.UTF_8)
+
+        val deflater = Deflater(Deflater.BEST_COMPRESSION)
+        deflater.setInput(dictBytes)
+        deflater.finish()
+
+        val outputStream = ByteArrayOutputStream()
+        val buffer = ByteArray(256)
+        while (!deflater.finished()) {
+            val count = deflater.deflate(buffer)
+            outputStream.write(buffer, 0, count)
         }
-        return Pair(compressedBytes, ratio.coerceIn(0.15f, 0.95f))
+        deflater.end()
+
+        val deflatedBytes = outputStream.toByteArray()
+        val compressedBytes = if (deflatedBytes.isNotEmpty() && deflatedBytes.size < originalSize) {
+            deflatedBytes
+        } else {
+            dictBytes
+        }
+
+        val compressedSize = compressedBytes.size
+        return Triple(compressedBytes, originalSize, compressedSize)
     }
 
     fun decode(compressedBytes: ByteArray): String {

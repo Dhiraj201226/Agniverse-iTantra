@@ -426,6 +426,37 @@ fun MessageBubble(
                 }
             }
 
+            // SHA-256 Source Hash vs Final Destination Hash Integrity & Tamper Verification
+            Spacer(modifier = Modifier.height(6.dp))
+            Surface(
+                shape = RoundedCornerShape(6.dp),
+                color = if (msg.isTampered) Color(0xFFFFEBEE) else Color(0xFFE8F5E9),
+                border = BorderStroke(1.dp, if (msg.isTampered) Color(0xFFD32F2F) else Color(0xFF2E7D32))
+            ) {
+                Row(
+                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(
+                        imageVector = if (msg.isTampered) Icons.Default.GppBad else Icons.Default.VerifiedUser,
+                        contentDescription = "Integrity",
+                        tint = if (msg.isTampered) Color(0xFFD32F2F) else Color(0xFF2E7D32),
+                        modifier = Modifier.size(14.dp)
+                    )
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text(
+                        text = if (msg.isTampered) {
+                            "⚠️ TAMPER ALERT! Source Hash: ${msg.sourceHash} ≠ Final Hash: ${msg.destinationHash}"
+                        } else {
+                            "🔒 Source Hash: ${msg.sourceHash} ➔ Final Hash: ${msg.destinationHash} (UN-TAMPERED ✓)"
+                        },
+                        fontSize = 10.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = if (msg.isTampered) Color(0xFFB71C1C) else Color(0xFF1B5E20)
+                    )
+                }
+            }
+
             Spacer(modifier = Modifier.height(6.dp))
 
             Row(
@@ -433,7 +464,7 @@ fun MessageBubble(
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 Text(
-                    text = "Codec Comp: ${(msg.codecCompressionRatio * 100).toInt()}% | AES-GCM Encrypted",
+                    text = "📦 Codec Comp: ${msg.originalByteSize}B ➔ ${msg.compressedByteSize}B (${((1.0f - msg.codecCompressionRatio) * 100).coerceAtLeast(0f).toInt()}% saved) | AES-GCM",
                     fontSize = 10.sp,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )

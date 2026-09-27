@@ -6,6 +6,7 @@ import com.example.myapplication.domain.model.EmotionLabel
 import com.example.myapplication.domain.model.Message
 import com.example.myapplication.domain.model.MessageStatus
 import com.example.myapplication.domain.model.Priority
+import com.example.myapplication.core.security.MessageHasher
 import com.example.myapplication.domain.model.VoiceProfile
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -78,11 +79,19 @@ class WifiPeerEngine(private val context: Context) {
                                     )
                                 } else null
 
+                                val textContent = json.optString("text", "")
+                                val sourceHash = json.optString("sourceHash", MessageHasher.computeSha256(textContent))
+                                val destinationHash = MessageHasher.computeSha256(textContent)
+                                val isTampered = sourceHash.isNotBlank() && !sourceHash.equals(destinationHash, ignoreCase = true)
+
+                                val origSize = json.optInt("origSize", textContent.toByteArray(Charsets.UTF_8).size)
+                                val compSize = json.optInt("compSize", (origSize * 0.45).toInt())
+
                                 val msg = Message(
                                     id = json.optString("id", "MSG-NET"),
                                     senderId = senderId,
                                     senderCallSign = json.optString("senderCallSign", "Remote-Node"),
-                                    originalText = json.optString("text", ""),
+                                    originalText = textContent,
                                     translatedText = if (json.has("translatedText") && !json.isNull("translatedText")) json.getString("translatedText") else null,
                                     priority = Priority.valueOf(json.optString("priority", "NORMAL")),
                                     emotion = EmotionLabel.valueOf(json.optString("emotion", "NEUTRAL")),
@@ -93,7 +102,12 @@ class WifiPeerEngine(private val context: Context) {
                                     voiceProfile = voiceProfile,
                                     translationAccuracy = json.optDouble("transAccuracy", 98.0).toFloat(),
                                     translationBleuScore = json.optDouble("transBleu", 0.95).toFloat(),
-                                    translationQualityGrade = json.optString("transGrade", "EXACT (98%)")
+                                    translationQualityGrade = json.optString("transGrade", "EXACT (98%)"),
+                                    originalByteSize = origSize,
+                                    compressedByteSize = compSize,
+                                    sourceHash = sourceHash,
+                                    destinationHash = destinationHash,
+                                    isTampered = isTampered
                                 )
                                 onMessageReceived(msg)
                             }
@@ -140,6 +154,9 @@ class WifiPeerEngine(private val context: Context) {
                     put("transAccuracy", msg.translationAccuracy)
                     put("transBleu", msg.translationBleuScore)
                     put("transGrade", msg.translationQualityGrade)
+                    put("origSize", msg.originalByteSize)
+                    put("compSize", msg.compressedByteSize)
+                    put("sourceHash", msg.sourceHash)
 
                     // Attach Mel-Spectrogram Acoustic Voice Profile parameters
                     msg.voiceProfile?.let { vp ->

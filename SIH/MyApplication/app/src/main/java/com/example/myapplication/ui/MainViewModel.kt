@@ -7,6 +7,7 @@ import com.example.myapplication.core.codec.Packetizer
 import com.example.myapplication.core.codec.RetroSpeechCodec
 import com.example.myapplication.core.emergency.EmergencyController
 import com.example.myapplication.core.security.EncryptionManager
+import com.example.myapplication.core.security.MessageHasher
 import com.example.myapplication.core.speech.*
 import com.example.myapplication.core.telemetry.TelemetryEngine
 import com.example.myapplication.core.transport.MeshTransportEngine
@@ -108,17 +109,31 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     private fun seedInitialMessages() {
+        val t1 = "Base station online on Wi-Fi mesh. All channels active."
+        val h1 = MessageHasher.computeSha256(t1)
+        val (b1, orig1, comp1) = codec.encode(t1)
+
+        val t2 = "TRAPPED! Flash flood rising near sector 4 bridge. Need immediate help!"
+        val h2 = MessageHasher.computeSha256(t2)
+        val (b2, orig2, comp2) = codec.encode(t2)
+
         val initialList = listOf(
             Message(
                 id = "MSG-101",
                 senderId = "NODE-B",
                 senderCallSign = "Relay-Alpha",
-                originalText = "Base station online on Wi-Fi mesh. All channels active.",
+                originalText = t1,
                 translatedText = "बेस स्टेशन वाई-फाई मेश पर ऑनलाइन है। सभी चैनल सक्रिय हैं।",
                 priority = Priority.NORMAL,
                 emotion = EmotionLabel.NEUTRAL,
                 timestamp = System.currentTimeMillis() - 300000,
                 status = MessageStatus.DELIVERED,
+                originalByteSize = orig1,
+                compressedByteSize = comp1,
+                codecCompressionRatio = comp1.toFloat() / orig1.toFloat(),
+                sourceHash = h1,
+                destinationHash = h1,
+                isTampered = false,
                 voiceProfile = VoiceProfile(
                     speakerCallSign = "Relay-Alpha",
                     pitchHz = 110f,
@@ -131,13 +146,19 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 id = "MSG-102",
                 senderId = "NODE-C",
                 senderCallSign = "Rescue-2",
-                originalText = "TRAPPED! Flash flood rising near sector 4 bridge. Need immediate help!",
+                originalText = t2,
                 translatedText = "फंसे हुए हैं! सेक्टर 4 पुल के पास बाढ़ बढ़ रही है। तुरंत मदद चाहिए!",
                 priority = Priority.CRITICAL,
                 emotion = EmotionLabel.PANIC,
                 isDangerEscalated = true,
                 timestamp = System.currentTimeMillis() - 120000,
                 status = MessageStatus.DELIVERED,
+                originalByteSize = orig2,
+                compressedByteSize = comp2,
+                codecCompressionRatio = comp2.toFloat() / orig2.toFloat(),
+                sourceHash = h2,
+                destinationHash = h2,
+                isTampered = false,
                 voiceProfile = VoiceProfile(
                     speakerCallSign = "Rescue-2",
                     pitchHz = 220f,
@@ -266,13 +287,17 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 targetLang = _activeTargetLanguage.value
             )
 
-            // 3. Codec Encoding & Compression
-            val (compressedBytes, compressionRatio) = codec.encode(inputText)
+            // 3. Actual Codec Encoding & Byte-Level Compression
+            val (compressedBytes, originalSize, compressedSize) = codec.encode(inputText)
+            val compRatio = if (originalSize > 0) compressedSize.toFloat() / originalSize.toFloat() else 1.0f
 
-            // 4. AES-256-GCM Encryption
+            // 4. Source SHA-256 Cryptographic Hash Computation
+            val sourceHash = MessageHasher.computeSha256(inputText)
+
+            // 5. AES-256-GCM Encryption
             val (encryptedBytes, iv) = encryptionManager.encrypt(compressedBytes)
 
-            // 5. Packetization with CRC32
+            // 6. Packetization with CRC32
             val messageId = "MSG-${UUID.randomUUID().toString().take(6).uppercase()}"
             val packets = packetizer.packetize(
                 messageId = messageId,
@@ -294,7 +319,12 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 isDangerEscalated = emotionResult.isDangerDetected,
                 timestamp = System.currentTimeMillis(),
                 status = MessageStatus.SENDING,
-                codecCompressionRatio = compressionRatio,
+                codecCompressionRatio = compRatio,
+                originalByteSize = originalSize,
+                compressedByteSize = compressedSize,
+                sourceHash = sourceHash,
+                destinationHash = sourceHash, // Initial final hash matches source at origin
+                isTampered = false,
                 voiceProfile = currentProfile.voiceProfile,
                 translationAccuracy = translationRes.accuracyPercentage,
                 translationBleuScore = translationRes.bleuScore,
