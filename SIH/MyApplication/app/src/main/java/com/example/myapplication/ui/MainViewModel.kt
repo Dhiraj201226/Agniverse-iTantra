@@ -6,13 +6,16 @@ import androidx.lifecycle.viewModelScope
 import com.example.myapplication.core.codec.FuzzyMatchResult
 import com.example.myapplication.core.codec.Packetizer
 import com.example.myapplication.core.codec.RetroSpeechCodec
+import com.example.myapplication.core.emergency.EmergencyAudioController
 import com.example.myapplication.core.emergency.EmergencyController
+import com.example.myapplication.core.emergency.EmergencyLocationManager
 import com.example.myapplication.core.security.AadHeader
 import com.example.myapplication.core.security.EncryptionManager
 import com.example.myapplication.core.security.MessageHasher
 import com.example.myapplication.core.security.PayloadType
 import com.example.myapplication.core.speech.*
 import com.example.myapplication.core.telemetry.TelemetryEngine
+import com.example.myapplication.core.transport.BluetoothPeerEngine
 import com.example.myapplication.core.transport.MeshTransportEngine
 import com.example.myapplication.core.transport.NodeDiscoveryEngine
 import com.example.myapplication.core.transport.VoipPttEngine
@@ -38,6 +41,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     val emergencyController = EmergencyController(application)
     val telemetryEngine = TelemetryEngine()
     val wifiPeerEngine = WifiPeerEngine(application)
+    val bluetoothPeerEngine = BluetoothPeerEngine(application)
     val liveSpeechRecognizer = AndroidLiveSpeechRecognizer(application)
     val nativeTts = AndroidNativeTTS(application)
     val voipPttEngine = VoipPttEngine()
@@ -45,6 +49,20 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     val exactIndicTranslator = ExactIndicTranslator()
     val sherpaRecognizer = SherpaONNXRecognizer()
     val openSourceTts = OpenSourceIndicTTS(application)
+
+    val languageModelManager = LanguageModelManager()
+    val pauseSpeechDetector = PauseSpeechDetector()
+    val emergencyAudioController = EmergencyAudioController(application, openSourceTts)
+    val emergencyLocationManager = EmergencyLocationManager(application)
+
+    private val _communicationMode = MutableStateFlow(CommunicationMode.PUSH_TO_TALK)
+    val communicationMode: StateFlow<CommunicationMode> = _communicationMode.asStateFlow()
+
+    private val _systemSpeechState = MutableStateFlow(SystemSpeechState.IDLE)
+    val systemSpeechState: StateFlow<SystemSpeechState> = _systemSpeechState.asStateFlow()
+
+    val languageModels = languageModelManager.modelsState
+    val lastKnownStatus = emergencyLocationManager.status
 
     // 2. Active AI Providers (Default to Open-Source AI4Bharat Sherpa-ONNX STT)
     var activeSpeechRecognizer: SpeechRecognizer = sherpaRecognizer
@@ -122,9 +140,8 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                     _messages.update { current -> current + receivedMsg }
                     telemetryEngine.recordRxPacket(128)
 
-                    // Speak incoming message aloud automatically in sender's CLONED VOICE profile!
-                    val textToSpeak = receivedMsg.translatedText ?: receivedMsg.originalText
-                    nativeTts.speakTextInClonedVoice(textToSpeak, _activeTargetLanguage.value, receivedMsg.voiceProfile)
+                    // Priority-Aware Emergency Audio Queueing & Interruption Playback
+                    emergencyAudioController.enqueueAndPlay(receivedMsg, _activeTargetLanguage.value)
 
                     if (receivedMsg.priority == Priority.CRITICAL) {
                         emergencyController.triggerHapticMorseSos()
@@ -292,12 +309,32 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         _nodeProfile.update { it.copy(voiceProfile = newVoiceProfile) }
     }
 
+    fun setCommunicationMode(mode: CommunicationMode) {
+        _communicationMode.value = mode
+    }
+
+    fun toggleEmergencyLocationMode(enabled: Boolean) {
+        emergencyLocationManager.setEmergencyModeEnabled(
+            enabled = enabled,
+            nodeId = _nodeProfile.value.nodeId,
+            callSign = _nodeProfile.value.callSign,
+            battery = _simulatedBatteryPercentage.value
+        )
+    }
+
+    fun loadLanguageModel(languageName: String) {
+        viewModelScope.launch {
+            languageModelManager.loadLanguageModel(languageName)
+            _activeTargetLanguage.value = languageName
+        }
+    }
+
     fun speakMessageAloud(text: String) {
         nativeTts.speakText(text, _activeTargetLanguage.value)
     }
 
     fun speakMessageAloudInClonedVoice(text: String, voiceProfile: VoiceProfile?) {
-        nativeTts.speakTextInClonedVoice(text, _activeTargetLanguage.value, voiceProfile)
+        openSourceTts.speakText(text, _activeTargetLanguage.value, voiceProfile)
     }
 
     fun sendMessage(inputText: String, priorityOverride: Priority = Priority.NORMAL) {

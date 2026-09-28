@@ -57,6 +57,67 @@ fun ModelCenterScreen(viewModel: MainViewModel) {
             }
         }
 
+        // 1A. 10-Language Offline Model Manager Card
+        val langModels by viewModel.languageModels.collectAsState()
+        Card(
+            shape = RoundedCornerShape(12.dp),
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
+        ) {
+            Column(modifier = Modifier.padding(16.dp)) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(Icons.Default.Translate, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text("10-LANGUAGE OFFLINE MODEL MANAGER", fontWeight = FontWeight.Bold, fontSize = 13.sp, color = MaterialTheme.colorScheme.primary)
+                }
+                Spacer(modifier = Modifier.height(8.dp))
+                Text("Loads only active language model to save RAM on low-end devices. Unloads inactive models automatically.", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Spacer(modifier = Modifier.height(10.dp))
+
+                langModels.forEach { modelCfg ->
+                    Surface(
+                        shape = RoundedCornerShape(8.dp),
+                        color = MaterialTheme.colorScheme.surface,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 3.dp)
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(10.dp),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Column {
+                                Text("${modelCfg.languageName} (${modelCfg.isoCode.uppercase()})", fontWeight = FontWeight.Bold, fontSize = 13.sp)
+                                Text("Size: ${modelCfg.getFormattedSize()} | ${if (modelCfg.isInstalled) "Installed ✓" else "Not Installed"}", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            }
+
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                when (modelCfg.loadState) {
+                                    ModelLoadState.LOADED -> {
+                                        AssistChip(
+                                            onClick = { viewModel.loadLanguageModel(modelCfg.languageName) },
+                                            label = { Text("LOADED 🟢", fontSize = 10.sp, fontWeight = FontWeight.Bold) }
+                                        )
+                                    }
+                                    ModelLoadState.LOADING -> {
+                                        CircularProgressIndicator(modifier = Modifier.size(18.dp), strokeWidth = 2.dp)
+                                    }
+                                    else -> {
+                                        OutlinedButton(
+                                            onClick = { viewModel.loadLanguageModel(modelCfg.languageName) },
+                                            contentPadding = PaddingValues(horizontal = 8.dp, vertical = 2.dp)
+                                        ) {
+                                            Text("Load Model", fontSize = 11.sp)
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
         // 1B. Mel-Spectrogram Vocal Profile & Voice Cloning Studio
         val currentVp = nodeProfile.voiceProfile
         var pitchHz by remember { mutableStateOf(currentVp.pitchHz) }
