@@ -1,5 +1,7 @@
 package com.example.myapplication.domain.model
 
+import com.example.myapplication.core.security.PayloadType
+
 enum class EmotionLabel(val displayName: String, val isDanger: Boolean) {
     NEUTRAL("Neutral", false),
     DISTRESS("Distress", true),
@@ -46,6 +48,8 @@ data class Message(
     val isDangerEscalated: Boolean = false,
     val timestamp: Long = System.currentTimeMillis(),
     val status: MessageStatus = MessageStatus.SENT,
+    val payloadType: PayloadType = PayloadType.FREE_TEXT,
+    val templateId: Int? = null,
     val codecCompressionRatio: Float = 0.42f,
     val originalByteSize: Int = 0,
     val compressedByteSize: Int = 0,
@@ -57,7 +61,11 @@ data class Message(
     val voiceProfile: VoiceProfile? = null,
     val translationAccuracy: Float = 98.0f,
     val translationBleuScore: Float = 0.95f,
-    val translationQualityGrade: String = "EXACT (98%)"
+    val translationQualityGrade: String = "EXACT (98%)",
+    val sttMs: Long = 240,
+    val ttsMs: Long = 310,
+    val e2eMs: Long = 780,
+    val rtfRatio: Float = 0.12f
 )
 
 data class Packet(

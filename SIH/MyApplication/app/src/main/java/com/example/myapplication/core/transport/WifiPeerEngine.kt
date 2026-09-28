@@ -7,10 +7,12 @@ import com.example.myapplication.domain.model.Message
 import com.example.myapplication.domain.model.MessageStatus
 import com.example.myapplication.domain.model.Priority
 import com.example.myapplication.core.security.MessageHasher
+import com.example.myapplication.core.security.ReplayProtectionEngine
 import com.example.myapplication.domain.model.VoiceProfile
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import org.json.JSONArray
@@ -18,6 +20,10 @@ import org.json.JSONObject
 import java.net.DatagramPacket
 import java.net.DatagramSocket
 import java.net.InetAddress
+import com.example.myapplication.core.codec.CodebookEngine
+import com.example.myapplication.core.security.AadGcmCipher
+import com.example.myapplication.core.security.AadHeader
+import com.example.myapplication.core.security.PayloadType
 
 class WifiPeerEngine(private val context: Context) {
 
@@ -27,7 +33,17 @@ class WifiPeerEngine(private val context: Context) {
     private val scope = CoroutineScope(Dispatchers.IO)
     private var multicastLock: WifiManager.MulticastLock? = null
 
-    fun startListening(localNodeId: String, onMessageReceived: (Message) -> Unit) {
+    val storeAndForwardQueue = StoreAndForwardQueue()
+    val replayEngine = ReplayProtectionEngine()
+    val aadGcmCipher = AadGcmCipher()
+    val codebookEngine = CodebookEngine()
+
+    fun startListening(
+        localNodeId: String,
+        onDiscoveryPing: ((JSONObject) -> Unit)? = null,
+        onReplayBlocked: (() -> Unit)? = null,
+        onMessageReceived: (Message) -> Unit
+    ) {
         if (listenJob != null && listenJob?.isActive == true) return
 
         try {
@@ -56,6 +72,21 @@ class WifiPeerEngine(private val context: Context) {
                     if (rawData.startsWith("{") && rawData.endsWith("}")) {
                         try {
                             val json = JSONObject(rawData)
+
+                            // Handle Node Discovery Heartbeats & Store-and-Forward Flushing
+                            if (json.optString("type") == "DISCOVERY_PING") {
+                                val pingSender = json.optString("nodeId", "")
+                                if (pingSender != localNodeId && pingSender.isNotEmpty()) {
+                                    onDiscoveryPing?.invoke(json)
+
+                                    // Automatic Store-and-Forward Queue Flushing on Reconnection
+                                    storeAndForwardQueue.flushMessagesForReconnectedNode(pingSender) { pendingMsg ->
+                                        broadcastMessage(pendingMsg)
+                                    }
+                                }
+                                continue
+                            }
+
                             val senderId = json.optString("senderId", "")
 
                             // Ignore self-broadcasts
@@ -87,29 +118,47 @@ class WifiPeerEngine(private val context: Context) {
                                 val origSize = json.optInt("origSize", textContent.toByteArray(Charsets.UTF_8).size)
                                 val compSize = json.optInt("compSize", (origSize * 0.45).toInt())
 
-                                val msg = Message(
-                                    id = json.optString("id", "MSG-NET"),
-                                    senderId = senderId,
-                                    senderCallSign = json.optString("senderCallSign", "Remote-Node"),
-                                    originalText = textContent,
-                                    translatedText = if (json.has("translatedText") && !json.isNull("translatedText")) json.getString("translatedText") else null,
-                                    priority = Priority.valueOf(json.optString("priority", "NORMAL")),
-                                    emotion = EmotionLabel.valueOf(json.optString("emotion", "NEUTRAL")),
-                                    isDangerEscalated = json.optBoolean("isDangerEscalated", false),
-                                    timestamp = json.optLong("timestamp", System.currentTimeMillis()),
-                                    status = MessageStatus.DELIVERED,
-                                    hopCount = json.optInt("hopCount", 1) + 1,
-                                    voiceProfile = voiceProfile,
-                                    translationAccuracy = json.optDouble("transAccuracy", 98.0).toFloat(),
-                                    translationBleuScore = json.optDouble("transBleu", 0.95).toFloat(),
-                                    translationQualityGrade = json.optString("transGrade", "EXACT (98%)"),
-                                    originalByteSize = origSize,
-                                    compressedByteSize = compSize,
-                                    sourceHash = sourceHash,
-                                    destinationHash = destinationHash,
-                                    isTampered = isTampered
-                                )
-                                onMessageReceived(msg)
+                                val msgId = json.optString("id", "MSG-NET")
+                                val currentHops = json.optInt("hopCount", 1)
+                                val msgTimestamp = json.optLong("timestamp", System.currentTimeMillis())
+
+                                // REPLAY PROTECTION & MONOTONIC SEQUENCE VALIDATION
+                                val replayCheck = replayEngine.validatePacket(senderId, currentHops.toLong(), msgTimestamp, msgId)
+                                if (!replayCheck.isAllowed) {
+                                    onReplayBlocked?.invoke()
+                                    continue // Discard replayed packet
+                                }
+
+                                // FLOODING PROTECTION & DEDUPLICATION CHECK
+                                val transportEngine = MeshTransportEngine()
+                                if (!transportEngine.isDuplicateMessage(msgId) && currentHops < 8) {
+                                    val msg = Message(
+                                        id = msgId,
+                                        senderId = senderId,
+                                        senderCallSign = json.optString("senderCallSign", "Remote-Node"),
+                                        originalText = textContent,
+                                        translatedText = if (json.has("translatedText") && !json.isNull("translatedText")) json.getString("translatedText") else null,
+                                        priority = Priority.valueOf(json.optString("priority", "NORMAL")),
+                                        emotion = EmotionLabel.valueOf(json.optString("emotion", "NEUTRAL")),
+                                        isDangerEscalated = json.optBoolean("isDangerEscalated", false),
+                                        timestamp = json.optLong("timestamp", System.currentTimeMillis()),
+                                        status = MessageStatus.DELIVERED,
+                                        hopCount = currentHops,
+                                        voiceProfile = voiceProfile,
+                                        translationAccuracy = json.optDouble("transAccuracy", 98.0).toFloat(),
+                                        translationBleuScore = json.optDouble("transBleu", 0.95).toFloat(),
+                                        translationQualityGrade = json.optString("transGrade", "EXACT (98%)"),
+                                        originalByteSize = origSize,
+                                        compressedByteSize = compSize,
+                                        sourceHash = sourceHash,
+                                        destinationHash = destinationHash,
+                                        isTampered = isTampered
+                                    )
+                                    onMessageReceived(msg)
+
+                                    // APPLICATION-LEVEL MULTI-HOP RELAY FORWARDING (A -> B -> C -> D)
+                                    relayForwardMessage(msg)
+                                }
                             }
                         } catch (e: Exception) {
                             // Malformed packet
@@ -184,6 +233,42 @@ class WifiPeerEngine(private val context: Context) {
                 tempSocket.close()
             } catch (e: Exception) {
                 // Network unavailable or packet error
+            }
+        }
+    }
+
+    fun sendRawJsonBroadcast(jsonStr: String) {
+        scope.launch {
+            try {
+                val bytes = jsonStr.toByteArray(Charsets.UTF_8)
+                val tempSocket = DatagramSocket().apply { broadcast = true }
+                val globalBroadcast = InetAddress.getByName("255.255.255.255")
+                tempSocket.send(DatagramPacket(bytes, bytes.size, globalBroadcast, port))
+
+                val subnetBroadcast = getSubnetBroadcastAddress()
+                if (subnetBroadcast != null && subnetBroadcast != globalBroadcast) {
+                    tempSocket.send(DatagramPacket(bytes, bytes.size, subnetBroadcast, port))
+                }
+                tempSocket.close()
+            } catch (e: Exception) {
+                // Broadcast error
+            }
+        }
+    }
+
+    private fun relayForwardMessage(msg: Message) {
+        if (msg.hopCount >= 8) return
+        scope.launch {
+            try {
+                // Randomized jitter delay (15-40ms) to prevent broadcast storm collisions
+                delay((15..40).random().toLong())
+                val relayed = msg.copy(
+                    hopCount = msg.hopCount + 1,
+                    status = MessageStatus.DELIVERED
+                )
+                broadcastMessage(relayed)
+            } catch (e: Exception) {
+                // Forward exception
             }
         }
     }

@@ -145,11 +145,7 @@ class ExactIndicTranslator : Translator {
         }
 
         val translatedSentence = translatedWords.joinToString(" ")
-        return if (targetLang == "hindi") {
-            "🌐 $translatedSentence"
-        } else {
-            translatedSentence
-        }
+        return translatedSentence
     }
 
     private fun evaluateQuality(original: String, translated: String): Pair<Float, Float> {

@@ -10,10 +10,12 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.myapplication.core.speech.*
+import com.example.myapplication.domain.model.Priority
 import com.example.myapplication.ui.MainViewModel
 
 @Composable
@@ -222,24 +224,56 @@ fun ModelCenterScreen(viewModel: MainViewModel) {
             }
         }
 
-        // 5. TTS Synthesizer Card
+        // 5. Acoustic & Linguistic Emotion Classifier Card
         Card(
             shape = RoundedCornerShape(12.dp),
             colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
         ) {
             Column(modifier = Modifier.padding(16.dp)) {
-                Text("SPEECH SYNTHESIS (TTS) ENGINE", fontWeight = FontWeight.Bold, fontSize = 13.sp, color = MaterialTheme.colorScheme.primary)
+                Text("ACOUSTIC & LINGUISTIC DISTRESS EMOTION MODEL", fontWeight = FontWeight.Bold, fontSize = 13.sp, color = MaterialTheme.colorScheme.primary)
                 Spacer(modifier = Modifier.height(8.dp))
-                synthesizers.forEach { provider ->
+                Text("Analyzes vocal pitch F0, speech rate, and multi-lingual keywords to classify emergency distress probabilities.", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Spacer(modifier = Modifier.height(10.dp))
+
+                var testInput by remember { mutableStateOf("TRAPPED! Sinking in flash flood water near sector 4 bridge! Need help!") }
+                OutlinedTextField(
+                    value = testInput,
+                    onValueChange = { testInput = it },
+                    label = { Text("Sample Text / Voice Transcript to Classify") },
+                    modifier = Modifier.fillMaxWidth(),
+                    singleLine = true
+                )
+
+                Spacer(modifier = Modifier.height(10.dp))
+                val emotionRes = viewModel.emotionDetector.analyzeText(testInput, Priority.NORMAL, nodeProfile.voiceProfile)
+
+                Text("Detected State: ${emotionRes.emotion.displayName} (${(emotionRes.confidence * 100).toInt()}% confidence)", fontWeight = FontWeight.Bold, fontSize = 13.sp, color = if (emotionRes.isDangerDetected) Color(0xFFD32F2F) else MaterialTheme.colorScheme.primary)
+                if (emotionRes.escalationReason != null) {
+                    Text("Auto Escalation: ${emotionRes.escalationReason}", fontSize = 11.sp, color = Color(0xFFB71C1C))
+                }
+
+                Spacer(modifier = Modifier.height(10.dp))
+                Text("Multi-Class Probability Distribution:", fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                Spacer(modifier = Modifier.height(6.dp))
+
+                emotionRes.emotionProbabilities.forEach { (label, prob) ->
                     Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        modifier = Modifier.fillMaxWidth()
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 2.dp),
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
-                        RadioButton(
-                            selected = viewModel.activeSynthesizer.providerName == provider.providerName,
-                            onClick = { viewModel.selectSynthesizer(provider) }
-                        )
-                        Text(provider.providerName, fontSize = 14.sp)
+                        Text(label.displayName, fontSize = 11.sp, modifier = Modifier.width(70.dp))
+                        Surface(
+                            shape = RoundedCornerShape(4.dp),
+                            color = if (label.isDanger) Color(0xFFD32F2F) else MaterialTheme.colorScheme.primary,
+                            modifier = Modifier
+                                .weight(1f)
+                                .height(12.dp)
+                                .fillMaxWidth(prob)
+                        ) {}
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text("${(prob * 100).toInt()}%", fontSize = 10.sp, fontWeight = FontWeight.Bold)
                     }
                 }
             }

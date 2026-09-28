@@ -31,6 +31,7 @@ data class TelemetryData(
     val cpuPercentage: Int = 18,
     val batteryPercentage: Int = 85,
     val batteryTier: BatteryTier = BatteryTier.NORMAL,
+    val replaysBlocked: Long = 0,
     val activeSTTProvider: String = "Vosk (Offline Default)",
     val activeTranslationProvider: String = "Sarvam Translator",
     val activeTTSProvider: String = "Offline TTS",
