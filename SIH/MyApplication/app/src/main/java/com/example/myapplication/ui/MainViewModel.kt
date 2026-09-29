@@ -182,7 +182,14 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                     // Priority-Aware Emergency Audio Queueing & Interruption Playback
                     emergencyAudioController.enqueueAndPlay(processedMsg, receiverLang)
 
-                    if (processedMsg.priority == Priority.CRITICAL) {
+                    if (processedMsg.priority == Priority.CRITICAL || processedMsg.isDangerEscalated) {
+                        launch(kotlinx.coroutines.Dispatchers.Main) {
+                            android.widget.Toast.makeText(
+                        getApplication<Application>(),
+                                "CRITICAL SOS ALERT triggered by ${processedMsg.senderCallSign}!", 
+                                android.widget.Toast.LENGTH_LONG
+                            ).show()
+                        }
                         emergencyController.triggerHapticMorseSos()
                         emergencyController.startSiren()
                     }
@@ -400,6 +407,18 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 Priority.CRITICAL
             } else {
                 priorityOverride
+            }
+
+            if (finalPriority == Priority.CRITICAL) {
+                launch(kotlinx.coroutines.Dispatchers.Main) {
+                    android.widget.Toast.makeText(
+                        getApplication<Application>(),
+                        "SOS Triggered locally due to CRITICAL message!", 
+                        android.widget.Toast.LENGTH_LONG
+                    ).show()
+                }
+                emergencyController.triggerHapticMorseSos()
+                emergencyController.startSiren()
             }
 
             // 3. Exact Translation & Quality Judgment (MOVED TO RECEIVER)

@@ -263,18 +263,18 @@ fun MessageBubble(
     val isDark = isSystemInDarkTheme()
 
     val bubbleColor = when {
-        msg.priority == Priority.CRITICAL -> if (isDark) Color(0xFF450A0A) else Color(0xFFFEF2F2)
+        msg.priority == Priority.CRITICAL || msg.isDangerEscalated -> Color(0xFFD32F2F) // Bright Red
         isMe -> MaterialTheme.colorScheme.primaryContainer
         else -> MaterialTheme.colorScheme.surfaceVariant
     }
 
     val textContentColor = when {
-        msg.priority == Priority.CRITICAL -> if (isDark) Color(0xFFFEE2E2) else Color(0xFF7F1D1D)
+        msg.priority == Priority.CRITICAL || msg.isDangerEscalated -> Color.White
         isMe -> MaterialTheme.colorScheme.onPrimaryContainer
         else -> MaterialTheme.colorScheme.onSurface
     }
 
-    val borderColor = if (msg.priority == Priority.CRITICAL) Color(0xFFDC2626) else Color.Transparent
+    val borderColor = if (msg.priority == Priority.CRITICAL || msg.isDangerEscalated) Color(0xFFB71C1C) else Color.Transparent
 
     val alignment = if (isMe) Alignment.CenterEnd else Alignment.CenterStart
     val shape = if (isMe) {
