@@ -51,16 +51,16 @@ class VoipPttEngine(private val context: android.content.Context) {
         if (receiveJob?.isActive == true) return
 
         val audioManager = context.getSystemService(android.content.Context.AUDIO_SERVICE) as? android.media.AudioManager
-        audioManager?.mode = android.media.AudioManager.MODE_IN_COMMUNICATION
+        audioManager?.mode = android.media.AudioManager.MODE_NORMAL
         audioManager?.isSpeakerphoneOn = true
-        val maxVol = audioManager?.getStreamMaxVolume(android.media.AudioManager.STREAM_VOICE_CALL) ?: 15
-        audioManager?.setStreamVolume(android.media.AudioManager.STREAM_VOICE_CALL, maxVol, 0)
+        val maxVol = audioManager?.getStreamMaxVolume(android.media.AudioManager.STREAM_MUSIC) ?: 15
+        audioManager?.setStreamVolume(android.media.AudioManager.STREAM_MUSIC, maxVol, 0)
 
         val minBufferSize = AudioTrack.getMinBufferSize(sampleRate, channelConfigOut, audioFormat)
         audioTrack = AudioTrack.Builder()
             .setAudioAttributes(
                 AudioAttributes.Builder()
-                    .setUsage(AudioAttributes.USAGE_VOICE_COMMUNICATION)
+                    .setUsage(AudioAttributes.USAGE_MEDIA)
                     .setContentType(AudioAttributes.CONTENT_TYPE_SPEECH)
                     .build()
             )
