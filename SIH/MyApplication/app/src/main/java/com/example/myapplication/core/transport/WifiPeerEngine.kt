@@ -172,18 +172,22 @@ class WifiPeerEngine(private val context: Context) {
     }
 
     private fun getSubnetBroadcastAddress(): InetAddress? {
-        return try {
-            val wifi = context.applicationContext.getSystemService(Context.WIFI_SERVICE) as? WifiManager
-            val dhcp = wifi?.dhcpInfo ?: return null
-            val broadcast = (dhcp.ipAddress and dhcp.netmask) or dhcp.netmask.inv()
-            val quads = ByteArray(4)
-            for (k in 0..3) {
-                quads[k] = (broadcast shr (k * 8) and 0xFF).toByte()
+        try {
+            val interfaces = java.net.NetworkInterface.getNetworkInterfaces()
+            while (interfaces.hasMoreElements()) {
+                val networkInterface = interfaces.nextElement()
+                if (networkInterface.isLoopback || !networkInterface.isUp) continue
+                for (interfaceAddress in networkInterface.interfaceAddresses) {
+                    val broadcast = interfaceAddress.broadcast
+                    if (broadcast != null) {
+                        return broadcast
+                    }
+                }
             }
-            InetAddress.getByAddress(quads)
         } catch (e: Exception) {
-            null
+            // Fallback
         }
+        return null
     }
 
     fun broadcastMessage(msg: Message) {

@@ -147,7 +147,8 @@ class VoipPttEngine {
 
                 recorder.startRecording()
                 val sendSocket = DatagramSocket().apply { broadcast = true }
-                val broadcastAddr = InetAddress.getByName("255.255.255.255")
+                val globalBroadcast = InetAddress.getByName("255.255.255.255")
+                val subnetBroadcast = getSubnetBroadcastAddress()
 
                 val audioBufferSize = 1024
                 val packetBuffer = ByteArray(headerSize + audioBufferSize)
@@ -167,8 +168,10 @@ class VoipPttEngine {
                     val bytesRead = recorder.read(audioReadBuffer, 0, audioReadBuffer.size)
                     if (bytesRead > 0) {
                         System.arraycopy(audioReadBuffer, 0, packetBuffer, headerSize, bytesRead)
-                        val packet = DatagramPacket(packetBuffer, headerSize + bytesRead, broadcastAddr, port)
-                        sendSocket.send(packet)
+                        sendSocket.send(DatagramPacket(packetBuffer, headerSize + bytesRead, globalBroadcast, port))
+                        if (subnetBroadcast != null && subnetBroadcast != globalBroadcast) {
+                            sendSocket.send(DatagramPacket(packetBuffer, headerSize + bytesRead, subnetBroadcast, port))
+                        }
                     }
                 }
 
@@ -192,5 +195,24 @@ class VoipPttEngine {
         receiveSocket?.close()
         audioTrack?.stop()
         audioTrack?.release()
+    }
+
+    private fun getSubnetBroadcastAddress(): InetAddress? {
+        try {
+            val interfaces = java.net.NetworkInterface.getNetworkInterfaces()
+            while (interfaces.hasMoreElements()) {
+                val networkInterface = interfaces.nextElement()
+                if (networkInterface.isLoopback || !networkInterface.isUp) continue
+                for (interfaceAddress in networkInterface.interfaceAddresses) {
+                    val broadcast = interfaceAddress.broadcast
+                    if (broadcast != null) {
+                        return broadcast
+                    }
+                }
+            }
+        } catch (e: Exception) {
+            // Fallback
+        }
+        return null
     }
 }
