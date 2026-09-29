@@ -37,6 +37,9 @@ class VoipPttEngine {
     @Volatile
     private var activeLocalNodeId: String = ""
 
+    @Volatile
+    var isFullDuplex: Boolean = false
+
     fun updateLocalNodeId(id: String) {
         activeLocalNodeId = id.trim()
     }
@@ -80,8 +83,8 @@ class VoipPttEngine {
                     val packet = DatagramPacket(buffer, buffer.size)
                     receiveSocket?.receive(packet)
 
-                    // RULE 1: Never play audio when local device is actively transmitting (mic muted on speaker)
-                    if (isRecording) {
+                    // RULE 1: Never play audio when local device is actively transmitting in Half-Duplex mode
+                    if (isRecording && !isFullDuplex) {
                         continue
                     }
 

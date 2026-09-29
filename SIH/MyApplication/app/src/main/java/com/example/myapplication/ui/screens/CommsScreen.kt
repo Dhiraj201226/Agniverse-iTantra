@@ -188,8 +188,21 @@ fun CommsScreen(viewModel: MainViewModel) {
                     IconButton(
                         onClick = {
                             try {
+                                val langTag = when (nodeProfile.primaryLanguage) {
+                                    "Hindi" -> "hi-IN"
+                                    "Marathi" -> "mr-IN"
+                                    "Tamil" -> "ta-IN"
+                                    "Telugu" -> "te-IN"
+                                    "Bengali" -> "bn-IN"
+                                    "Gujarati" -> "gu-IN"
+                                    "Kannada" -> "kn-IN"
+                                    "Malayalam" -> "ml-IN"
+                                    "Odia" -> "or-IN"
+                                    else -> "en-IN"
+                                }
                                 val intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
                                     putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
+                                    putExtra(RecognizerIntent.EXTRA_LANGUAGE, langTag)
                                     putExtra(RecognizerIntent.EXTRA_PROMPT, "Speak into microphone for iTANTRA Comms...")
                                 }
                                 speechLauncher.launch(intent)

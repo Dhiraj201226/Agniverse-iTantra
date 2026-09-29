@@ -171,7 +171,8 @@ class WifiPeerEngine(private val context: Context) {
         }
     }
 
-    private fun getSubnetBroadcastAddress(): InetAddress? {
+    private fun getSubnetBroadcastAddresses(): List<InetAddress> {
+        val list = mutableListOf<InetAddress>()
         try {
             val interfaces = java.net.NetworkInterface.getNetworkInterfaces()
             while (interfaces.hasMoreElements()) {
@@ -180,14 +181,14 @@ class WifiPeerEngine(private val context: Context) {
                 for (interfaceAddress in networkInterface.interfaceAddresses) {
                     val broadcast = interfaceAddress.broadcast
                     if (broadcast != null) {
-                        return broadcast
+                        list.add(broadcast)
                     }
                 }
             }
         } catch (e: Exception) {
             // Fallback
         }
-        return null
+        return list
     }
 
     fun broadcastMessage(msg: Message) {
@@ -228,10 +229,12 @@ class WifiPeerEngine(private val context: Context) {
                 val globalBroadcast = InetAddress.getByName("255.255.255.255")
                 tempSocket.send(DatagramPacket(bytes, bytes.size, globalBroadcast, port))
 
-                // 2. Send to subnet specific broadcast address (e.g. 192.168.43.255)
-                val subnetBroadcast = getSubnetBroadcastAddress()
-                if (subnetBroadcast != null && subnetBroadcast != globalBroadcast) {
-                    tempSocket.send(DatagramPacket(bytes, bytes.size, subnetBroadcast, port))
+                // 2. Send to subnet specific broadcast addresses (e.g. 192.168.43.255 for hotspot, or Wi-Fi Direct p2p0)
+                val subnetBroadcasts = getSubnetBroadcastAddresses()
+                for (subnetBroadcast in subnetBroadcasts) {
+                    if (subnetBroadcast != globalBroadcast) {
+                        tempSocket.send(DatagramPacket(bytes, bytes.size, subnetBroadcast, port))
+                    }
                 }
 
                 tempSocket.close()
@@ -249,9 +252,11 @@ class WifiPeerEngine(private val context: Context) {
                 val globalBroadcast = InetAddress.getByName("255.255.255.255")
                 tempSocket.send(DatagramPacket(bytes, bytes.size, globalBroadcast, port))
 
-                val subnetBroadcast = getSubnetBroadcastAddress()
-                if (subnetBroadcast != null && subnetBroadcast != globalBroadcast) {
-                    tempSocket.send(DatagramPacket(bytes, bytes.size, subnetBroadcast, port))
+                val subnetBroadcasts = getSubnetBroadcastAddresses()
+                for (subnetBroadcast in subnetBroadcasts) {
+                    if (subnetBroadcast != globalBroadcast) {
+                        tempSocket.send(DatagramPacket(bytes, bytes.size, subnetBroadcast, port))
+                    }
                 }
                 tempSocket.close()
             } catch (e: Exception) {

@@ -335,6 +335,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     fun setCommunicationMode(mode: CommunicationMode) {
         _communicationMode.value = mode
+        voipPttEngine.isFullDuplex = (mode == CommunicationMode.CONTINUOUS)
     }
 
     fun toggleEmergencyLocationMode(enabled: Boolean) {
