@@ -37,12 +37,17 @@ class SileroVADGate {
  * Open-Source Offline Indic-TTS (FastPitch + HiFi-GAN / Piper) Engine.
  * Strips all emojis, globe symbols, and markdown symbols before synthesis.
  */
-class OpenSourceIndicTTS(context: Context) {
+class OpenSourceIndicTTS(private val context: Context) {
 
     private var mediaPlayer: android.media.MediaPlayer? = null
 
     fun speakText(text: String, languageName: String, voiceProfile: VoiceProfile? = null) {
         if (text.isBlank()) return
+        
+        val audioManager = context.getSystemService(Context.AUDIO_SERVICE) as? android.media.AudioManager
+        audioManager?.isSpeakerphoneOn = true
+        val maxVol = audioManager?.getStreamMaxVolume(android.media.AudioManager.STREAM_MUSIC) ?: 15
+        audioManager?.setStreamVolume(android.media.AudioManager.STREAM_MUSIC, maxVol, 0)
         
         val langCode = when (languageName.lowercase(Locale.ROOT)) {
             "hindi" -> "hi"

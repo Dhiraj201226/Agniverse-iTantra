@@ -15,7 +15,7 @@ import java.net.DatagramPacket
 import java.net.DatagramSocket
 import java.net.InetAddress
 
-class VoipPttEngine {
+class VoipPttEngine(private val context: android.content.Context) {
 
     private val port = 8889
     private val sampleRate = 16000
@@ -49,6 +49,12 @@ class VoipPttEngine {
             activeLocalNodeId = localNodeId.trim()
         }
         if (receiveJob?.isActive == true) return
+
+        val audioManager = context.getSystemService(android.content.Context.AUDIO_SERVICE) as? android.media.AudioManager
+        audioManager?.mode = android.media.AudioManager.MODE_IN_COMMUNICATION
+        audioManager?.isSpeakerphoneOn = true
+        val maxVol = audioManager?.getStreamMaxVolume(android.media.AudioManager.STREAM_VOICE_CALL) ?: 15
+        audioManager?.setStreamVolume(android.media.AudioManager.STREAM_VOICE_CALL, maxVol, 0)
 
         val minBufferSize = AudioTrack.getMinBufferSize(sampleRate, channelConfigOut, audioFormat)
         audioTrack = AudioTrack.Builder()

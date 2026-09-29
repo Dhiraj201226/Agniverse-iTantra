@@ -44,7 +44,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     val bluetoothPeerEngine = BluetoothPeerEngine(application)
     val liveSpeechRecognizer = AndroidLiveSpeechRecognizer(application)
     val nativeTts = AndroidNativeTTS(application)
-    val voipPttEngine = VoipPttEngine()
+    val voipPttEngine = VoipPttEngine(application)
 
     val exactIndicTranslator = ExactIndicTranslator()
     val sherpaRecognizer = SherpaONNXRecognizer()
