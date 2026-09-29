@@ -359,7 +359,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     fun speakMessageAloudInClonedVoice(text: String, voiceProfile: VoiceProfile?) {
-        openSourceTts.speakText(text, _activeTargetLanguage.value, voiceProfile)
+        openSourceTts.speakText(text, _nodeProfile.value.primaryLanguage, voiceProfile)
     }
 
     fun sendMessage(inputText: String, priorityOverride: Priority = Priority.NORMAL) {

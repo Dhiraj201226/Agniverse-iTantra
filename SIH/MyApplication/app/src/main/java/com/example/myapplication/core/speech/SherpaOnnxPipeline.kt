@@ -51,9 +51,7 @@ class OpenSourceIndicTTS(context: Context) : TextToSpeech.OnInitListener {
 
     private fun cleanTextForSpeech(input: String): String {
         if (input.isBlank()) return ""
-        // Strip emojis (globe 🌐 and all Unicode symbols) before sending to TTS
         var cleaned = input.replace(Regex("[\\u1F300-\\u1F9FF\\u2600-\\u26FF\\u2700-\\u27BF]"), "")
-        // Strip markdown icons
         cleaned = cleaned.replace(Regex("^[🌐📦🔒⚠️🎯⭐✓]+\\s*"), "")
         return cleaned.trim()
     }
@@ -72,11 +70,17 @@ class OpenSourceIndicTTS(context: Context) : TextToSpeech.OnInitListener {
             "bengali" -> Locale("bn", "IN")
             "gujarati" -> Locale("gu", "IN")
             "kannada" -> Locale("kn", "IN")
+            "malayalam" -> Locale("ml", "IN")
+            "odia" -> Locale("or", "IN")
             else -> Locale.ENGLISH
         }
 
-        ttsEngine?.language = locale
+        val result = ttsEngine?.setLanguage(locale)
+        if (result == TextToSpeech.LANG_MISSING_DATA || result == TextToSpeech.LANG_NOT_SUPPORTED) {
+            ttsEngine?.setLanguage(Locale.ENGLISH) // Fallback to English if offline pack is missing
+        }
 
+        // Apply pseudo-voice cloning (pitch & speed adjustments based on sender's profile)
         if (voiceProfile != null) {
             ttsEngine?.setPitch(voiceProfile.pitchRatio.coerceIn(0.5f, 2.0f))
             ttsEngine?.setSpeechRate(voiceProfile.speechRate.coerceIn(0.6f, 1.8f))
