@@ -147,12 +147,22 @@ class VoipPttEngine(private val context: android.content.Context) {
             try {
                 val minBufferSize = AudioRecord.getMinBufferSize(sampleRate, channelConfigIn, audioFormat)
                 val recorder = AudioRecord(
-                    MediaRecorder.AudioSource.MIC,
+                    MediaRecorder.AudioSource.VOICE_COMMUNICATION,
                     sampleRate,
                     channelConfigIn,
                     audioFormat,
                     minBufferSize * 4
                 )
+
+                if (android.media.audiofx.AcousticEchoCanceler.isAvailable()) {
+                    val aec = android.media.audiofx.AcousticEchoCanceler.create(recorder.audioSessionId)
+                    aec?.enabled = true
+                }
+                
+                if (android.media.audiofx.NoiseSuppressor.isAvailable()) {
+                    val ns = android.media.audiofx.NoiseSuppressor.create(recorder.audioSessionId)
+                    ns?.enabled = true
+                }
 
                 recorder.startRecording()
                 val sendSocket = DatagramSocket().apply { broadcast = true }
