@@ -122,16 +122,16 @@ class WifiPeerEngine(private val context: Context) {
                                 val currentHops = json.optInt("hopCount", 1)
                                 val msgTimestamp = json.optLong("timestamp", System.currentTimeMillis())
 
-                                // REPLAY PROTECTION & MONOTONIC SEQUENCE VALIDATION
-                                val replayCheck = replayEngine.validatePacket(senderId, currentHops.toLong(), msgTimestamp, msgId)
+                                // REPLAY PROTECTION & DEDUPLICATION VALIDATION
+                                // (Pass 0L for sequence to avoid monotonic hop-count regression bug)
+                                val replayCheck = replayEngine.validatePacket(senderId, 0L, msgTimestamp, msgId)
                                 if (!replayCheck.isAllowed) {
                                     onReplayBlocked?.invoke()
-                                    continue // Discard replayed packet
+                                    continue // Discard replayed or duplicate packet
                                 }
 
-                                // FLOODING PROTECTION & DEDUPLICATION CHECK
-                                val transportEngine = MeshTransportEngine()
-                                if (!transportEngine.isDuplicateMessage(msgId) && currentHops < 8) {
+                                // FLOODING PROTECTION (Max 8 Hops)
+                                if (currentHops < 8) {
                                     val msg = Message(
                                         id = msgId,
                                         senderId = senderId,

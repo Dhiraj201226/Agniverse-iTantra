@@ -13,7 +13,7 @@ data class ReplayCheckResult(
  * Validates monotonic sequence numbers, sliding timestamp windows, and nonce uniqueness.
  */
 class ReplayProtectionEngine(
-    private val maxTimestampDiffMs: Long = 5 * 60 * 1000L // 5 Minute Window
+    private val maxTimestampDiffMs: Long = 24 * 60 * 60 * 1000L // 24 Hour Window for offline devices
 ) {
 
     private val nodeSequenceMap = ConcurrentHashMap<String, Long>()
