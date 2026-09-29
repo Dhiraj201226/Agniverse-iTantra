@@ -121,8 +121,23 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         // Start Background Discovery Heartbeats
         nodeDiscoveryEngine.startHeartbeatDiscovery(
             localProfile = { _nodeProfile.value },
+            localBattery = { _simulatedBatteryPercentage.value },
             sendPingBroadcast = { pingJson -> wifiPeerEngine.sendRawJsonBroadcast(pingJson) }
         )
+
+        // Poll Real Device Battery Level (Replaces simulation with reality)
+        viewModelScope.launch {
+            while (true) {
+                try {
+                    val bm = application.getSystemService(android.content.Context.BATTERY_SERVICE) as android.os.BatteryManager
+                    val realBattery = bm.getIntProperty(android.os.BatteryManager.BATTERY_PROPERTY_CAPACITY)
+                    if (realBattery > 0) {
+                        updateBatteryPercentage(realBattery)
+                    }
+                } catch (e: Exception) {}
+                kotlinx.coroutines.delay(30000)
+            }
+        }
 
         // Start UDP Socket Listener for 2-Device Wi-Fi Mesh Comms & Dynamic Discovery
         wifiPeerEngine.startListening(

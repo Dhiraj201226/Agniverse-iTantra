@@ -28,6 +28,7 @@ class NodeDiscoveryEngine {
 
     fun startHeartbeatDiscovery(
         localProfile: () -> NodeProfile,
+        localBattery: () -> Int,
         sendPingBroadcast: (String) -> Unit
     ) {
         if (heartbeatJob?.isActive == true) return
@@ -41,6 +42,7 @@ class NodeDiscoveryEngine {
                     put("callSign", profile.callSign)
                     put("role", profile.role)
                     put("language", profile.primaryLanguage)
+                    put("battery", localBattery())
                     put("timestamp", System.currentTimeMillis())
                 }.toString()
 
@@ -59,6 +61,7 @@ class NodeDiscoveryEngine {
         val callSign = json.optString("callSign", "Peer-Node")
         val role = json.optString("role", "Responder")
         val lang = json.optString("language", "English")
+        val batt = json.optInt("battery", 85)
 
         if (nodeId.isBlank()) return null
 
@@ -67,6 +70,7 @@ class NodeDiscoveryEngine {
             callSign = callSign,
             role = role,
             primaryLanguage = lang,
+            batteryLevel = batt,
             lastSeenTimestamp = System.currentTimeMillis()
         )
 
