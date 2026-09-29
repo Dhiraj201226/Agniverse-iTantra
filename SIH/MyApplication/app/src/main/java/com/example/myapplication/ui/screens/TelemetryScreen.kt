@@ -374,7 +374,7 @@ fun TelemetryScreen(viewModel: MainViewModel) {
             }
         }
 
-        // 6. Stage-by-Stage Pipeline Latency Instrumentation
+        // COMPETITION SCORING METRICS (SIH26173)
         Card(
             shape = RoundedCornerShape(12.dp),
             colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
@@ -382,72 +382,56 @@ fun TelemetryScreen(viewModel: MainViewModel) {
             Column(modifier = Modifier.padding(14.dp)) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Icon(
-                        imageVector = Icons.Default.Timer,
+                        imageVector = Icons.Default.Grading,
                         contentDescription = null,
                         tint = MaterialTheme.colorScheme.primary,
                         modifier = Modifier.size(20.dp)
                     )
                     Spacer(modifier = Modifier.width(8.dp))
                     Text(
-                        text = "Pipeline Latency Instrumentation",
+                        text = "SIH Scoring Metrics",
                         fontWeight = FontWeight.Bold,
-                        fontSize = 15.sp,
+                        fontSize = 16.sp,
                         color = MaterialTheme.colorScheme.onSurface
                     )
                 }
 
-                Spacer(modifier = Modifier.height(12.dp))
+                Spacer(modifier = Modifier.height(16.dp))
 
+                // ACCURACY
+                Text("ACCURACY", fontWeight = FontWeight.Bold, fontSize = 13.sp, color = MaterialTheme.colorScheme.primary)
+                HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
+                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                    MetricItem("STT WER", "${telemetry.sttWer}%")
+                    MetricItem("TTS Intelligibility", "${telemetry.ttsIntelligibilityMOS}/5.0")
+                    MetricItem("TTS Naturalness", "${telemetry.ttsNaturalnessMOS}/5.0")
+                }
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                // LATENCY
+                Text("LATENCY (Speech → Speech)", fontWeight = FontWeight.Bold, fontSize = 13.sp, color = MaterialTheme.colorScheme.primary)
+                HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
                 LatencyRow("Speech-to-Text (${telemetry.activeSTTProvider})", "${telemetry.sttLatencyMs} ms")
-                LatencyRow("Exact Translation (${telemetry.activeTranslationProvider})", "${telemetry.translationLatencyMs} ms")
-                LatencyRow("Codec Byte Compression (zlib/dict)", "${telemetry.codecLatencyMs} ms")
-                LatencyRow("Mesh Transport Transit Time", "${telemetry.transportLatencyMs} ms")
-                LatencyRow("AES-256-GCM Decryption", "${telemetry.decryptionLatencyMs} ms")
-                LatencyRow("Cloned Voice TTS Synthesis (${telemetry.activeTTSProvider})", "${telemetry.ttsLatencyMs} ms")
-                HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
-                LatencyRow("TOTAL END-TO-END PIPELINE LATENCY", "${telemetry.endToEndLatencyMs} ms", isBold = true)
-            }
-        }
+                LatencyRow("Cloned Voice TTS (${telemetry.activeTTSProvider})", "${telemetry.ttsLatencyMs} ms")
+                LatencyRow("TOTAL END-TO-END", "${telemetry.endToEndLatencyMs} ms", isBold = true)
 
-        // 7. System Hardware Metrics
-        Card(
-            shape = RoundedCornerShape(12.dp),
-            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
-        ) {
-            Column(modifier = Modifier.padding(14.dp)) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(
-                        imageVector = Icons.Default.Memory,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.size(20.dp)
-                    )
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text(
-                        text = "System Hardware Metrics",
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 15.sp,
-                        color = MaterialTheme.colorScheme.onSurface
-                    )
-                }
+                Spacer(modifier = Modifier.height(16.dp))
 
-                Spacer(modifier = Modifier.height(12.dp))
-
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween
-                ) {
-                    Box(modifier = Modifier.weight(1f)) {
-                        MetricItem("App RAM", "${telemetry.ramUsageMb} MB")
+                // EFFICIENCY & REAL-TIME
+                Row(modifier = Modifier.fillMaxWidth()) {
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text("EFFICIENCY", fontWeight = FontWeight.Bold, fontSize = 13.sp, color = MaterialTheme.colorScheme.primary)
+                        HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
+                        LatencyRow("App RAM", "${telemetry.ramUsageMb} MB")
+                        LatencyRow("CPU Load", "${telemetry.cpuPercentage}%")
+                        LatencyRow("Model/Flash Size", "${telemetry.modelFlashSizeMb} MB")
                     }
-                    Box(modifier = Modifier.weight(1f)) {
-                        MetricItem("CPU Load", "${telemetry.cpuPercentage}%")
-                    }
-                    Box(modifier = Modifier.weight(1f)) {
-                        MetricItem("RTT", "${telemetry.rttMs} ms")
-                    }
-                    Box(modifier = Modifier.weight(1f)) {
-                        MetricItem("Loss Rate", "${telemetry.lossPercentage}%")
+                    Spacer(modifier = Modifier.width(16.dp))
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text("REAL-TIME", fontWeight = FontWeight.Bold, fontSize = 13.sp, color = MaterialTheme.colorScheme.primary)
+                        HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
+                        LatencyRow("RTF (Target < 1.0)", "${telemetry.rtf}", isBold = telemetry.rtf < 1.0f)
                     }
                 }
             }

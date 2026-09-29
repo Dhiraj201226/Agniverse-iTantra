@@ -137,13 +137,37 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             },
             onMessageReceived = { receivedMsg ->
                 viewModelScope.launch {
-                    _messages.update { current -> current + receivedMsg }
+                    // Receiver Side Translation
+                    val receiverLang = _nodeProfile.value.primaryLanguage
+                    val tTransStart = System.currentTimeMillis()
+                    
+                    val translationRes = if (receivedMsg.sourceLanguage != receiverLang) {
+                        exactIndicTranslator.translateWithJudgement(
+                            text = receivedMsg.originalText,
+                            sourceLang = receivedMsg.sourceLanguage,
+                            targetLang = receiverLang
+                        )
+                    } else null
+                    
+                    val translationMs = if (translationRes != null) (System.currentTimeMillis() - tTransStart).coerceAtLeast(15) else 0L
+
+                    val processedMsg = if (translationRes != null) {
+                        receivedMsg.copy(
+                            translatedText = translationRes.translatedText,
+                            targetLanguage = receiverLang,
+                            translationAccuracy = translationRes.accuracyPercentage,
+                            translationBleuScore = translationRes.bleuScore,
+                            translationQualityGrade = translationRes.qualityGrade
+                        )
+                    } else receivedMsg
+                    
+                    _messages.update { current -> current + processedMsg }
                     telemetryEngine.recordRxPacket(128)
 
                     // Priority-Aware Emergency Audio Queueing & Interruption Playback
-                    emergencyAudioController.enqueueAndPlay(receivedMsg, _activeTargetLanguage.value)
+                    emergencyAudioController.enqueueAndPlay(processedMsg, receiverLang)
 
-                    if (receivedMsg.priority == Priority.CRITICAL) {
+                    if (processedMsg.priority == Priority.CRITICAL) {
                         emergencyController.triggerHapticMorseSos()
                         emergencyController.startSiren()
                     }
@@ -362,14 +386,8 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 priorityOverride
             }
 
-            // 3. Exact Translation & Quality Judgment
-            val tTransStart = System.currentTimeMillis()
-            val translationRes = exactIndicTranslator.translateWithJudgement(
-                text = inputText,
-                sourceLang = currentProfile.primaryLanguage,
-                targetLang = _activeTargetLanguage.value
-            )
-            val translationMs = (System.currentTimeMillis() - tTransStart).coerceAtLeast(15)
+            // 3. Exact Translation & Quality Judgment (MOVED TO RECEIVER)
+            val translationMs = 0L
 
             // 4. Actual Codec Encoding & Byte-Level Compression
             val tCodecStart = System.currentTimeMillis()
@@ -416,9 +434,9 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 senderId = currentProfile.nodeId,
                 senderCallSign = currentProfile.callSign,
                 originalText = inputText,
-                translatedText = translationRes.translatedText,
+                translatedText = null,
                 sourceLanguage = currentProfile.primaryLanguage,
-                targetLanguage = _activeTargetLanguage.value,
+                targetLanguage = currentProfile.primaryLanguage,
                 priority = finalPriority,
                 emotion = emotionResult.emotion,
                 emotionConfidence = emotionResult.confidence,
@@ -434,9 +452,9 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 destinationHash = sourceHash,
                 isTampered = false,
                 voiceProfile = currentProfile.voiceProfile,
-                translationAccuracy = translationRes.accuracyPercentage,
-                translationBleuScore = translationRes.bleuScore,
-                translationQualityGrade = translationRes.qualityGrade,
+                translationAccuracy = 0f,
+                translationBleuScore = 0f,
+                translationQualityGrade = "N/A",
                 sttMs = sttMs,
                 ttsMs = ttsMs,
                 e2eMs = e2eMs
@@ -460,8 +478,11 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
-    fun triggerSosEmergency(preset: EmergencyPreset? = null) {
-        val text = preset?.defaultText ?: "SOS CRITICAL EMERGENCY DISTRESS! Immediate medical & rescue assistance required at current GPS location!"
+    fun triggerSosEmergency(preset: EmergencyPreset? = null, location: String? = null) {
+        var text = preset?.defaultText ?: "SOS CRITICAL EMERGENCY DISTRESS! Immediate medical & rescue assistance required at current GPS location!"
+        if (!location.isNullOrBlank()) {
+            text += " | Manual Location: $location"
+        }
         emergencyController.triggerHapticMorseSos()
         emergencyController.startSiren()
         sendMessage(inputText = text, priorityOverride = Priority.CRITICAL)

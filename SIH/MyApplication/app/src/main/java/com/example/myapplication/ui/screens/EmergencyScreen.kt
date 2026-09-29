@@ -25,6 +25,7 @@ import com.example.myapplication.ui.MainViewModel
 fun EmergencyScreen(viewModel: MainViewModel) {
     val emergencyController = viewModel.emergencyController
     var isSirenPlaying by remember { mutableStateOf(emergencyController.isEmergencyActive()) }
+    var manualLocation by remember { mutableStateOf("") }
 
     Column(
         modifier = Modifier
@@ -55,10 +56,29 @@ fun EmergencyScreen(viewModel: MainViewModel) {
 
                 Spacer(modifier = Modifier.height(16.dp))
 
+                // Manual Location Input
+                OutlinedTextField(
+                    value = manualLocation,
+                    onValueChange = { manualLocation = it },
+                    label = { Text("Manual Location (e.g., Trail 4 near River)", color = Color.White) },
+                    placeholder = { Text("Enter location if battery is dying...", color = Color.LightGray) },
+                    modifier = Modifier.fillMaxWidth(),
+                    singleLine = true,
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = Color.White,
+                        unfocusedBorderColor = Color(0xFFFFCDD2),
+                        focusedTextColor = Color.White,
+                        unfocusedTextColor = Color.White,
+                        cursorColor = Color.White
+                    )
+                )
+
+                Spacer(modifier = Modifier.height(16.dp))
+
                 Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                     Button(
                         onClick = {
-                            viewModel.triggerSosEmergency()
+                            viewModel.triggerSosEmergency(location = manualLocation)
                             isSirenPlaying = true
                         },
                         colors = ButtonDefaults.buttonColors(containerColor = Color.White)
@@ -129,7 +149,7 @@ fun EmergencyScreen(viewModel: MainViewModel) {
         ) {
             items(emergencyController.presets) { preset ->
                 PresetCard(preset = preset) {
-                    viewModel.triggerSosEmergency(preset)
+                    viewModel.triggerSosEmergency(preset = preset, location = manualLocation)
                     isSirenPlaying = true
                 }
             }

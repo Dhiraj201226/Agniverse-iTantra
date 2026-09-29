@@ -3,6 +3,7 @@ package com.example.myapplication.ui.screens
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
@@ -10,9 +11,9 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.ErrorOutline
+import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Mic
 import androidx.compose.material.icons.filled.MultipleStop
-import androidx.compose.material.icons.filled.Radio
 import androidx.compose.material.icons.filled.SettingsInputAntenna
 import androidx.compose.material.icons.filled.VolumeUp
 import androidx.compose.material3.*
@@ -25,6 +26,7 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.myapplication.core.speech.CommunicationMode
 import com.example.myapplication.ui.MainViewModel
 
 @Composable
@@ -62,12 +64,29 @@ fun WalkieTalkieScreen(viewModel: MainViewModel) {
                     verticalAlignment = Alignment.CenterVertically,
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    Icon(Icons.Default.Radio, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+                    Icon(Icons.Default.Home, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
                     Spacer(modifier = Modifier.width(8.dp))
-                    Text("Radio Voice Routing Configuration", fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                    Text("Voice Routing", fontWeight = FontWeight.Bold, fontSize = 16.sp)
                 }
 
-                Spacer(modifier = Modifier.height(12.dp))
+                Spacer(modifier = Modifier.height(16.dp))
+
+                // Duplex Toggle
+                val commsMode by viewModel.communicationMode.collectAsState()
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.Center
+                ) {
+                    SegmentedControl(
+                        items = listOf("Half-Duplex", "Full-Duplex"),
+                        selectedIndex = if (commsMode == CommunicationMode.PUSH_TO_TALK) 0 else 1,
+                        onItemSelection = { index ->
+                            viewModel.setCommunicationMode(if (index == 0) CommunicationMode.PUSH_TO_TALK else CommunicationMode.CONTINUOUS)
+                        }
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(16.dp))
 
                 // Source Node Display
                 Surface(
@@ -257,9 +276,9 @@ fun WalkieTalkieScreen(viewModel: MainViewModel) {
                     Spacer(modifier = Modifier.width(8.dp))
                     Text(
                         text = when {
-                            isSameSourceAndDestination -> "Transmission Disabled: Source == Destination"
-                            isPttActive -> "Streaming 16kHz PCM Voice ($sourceNodeId ➔ $selectedDestination)"
-                            else -> "VoIP Standby & Loopback-Filtered Listener Active"
+                            isSameSourceAndDestination -> "Transmission Disabled"
+                            isPttActive -> "Streaming Voice ($sourceNodeId ➔ $selectedDestination)"
+                            else -> "Standby Listener Active"
                         },
                         fontSize = 12.sp,
                         fontWeight = FontWeight.Medium
@@ -268,13 +287,39 @@ fun WalkieTalkieScreen(viewModel: MainViewModel) {
             }
         }
 
-        // Bottom Protocol Note
-        Text(
-            text = "Voice radio streams over UDP Port 8889 with 36-byte header verification. Loopback self-broadcasts and matching source-destination packets are automatically filtered out.",
-            fontSize = 11.sp,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.padding(bottom = 8.dp)
-        )
+    }
+}
+
+@Composable
+fun SegmentedControl(
+    items: List<String>,
+    selectedIndex: Int,
+    onItemSelection: (Int) -> Unit
+) {
+    Row(
+        modifier = Modifier
+            .clip(RoundedCornerShape(8.dp))
+            .background(MaterialTheme.colorScheme.surface)
+            .padding(4.dp)
+    ) {
+        items.forEachIndexed { index, item ->
+            Box(
+                modifier = Modifier
+                    .weight(1f)
+                    .clip(RoundedCornerShape(6.dp))
+                    .background(if (index == selectedIndex) MaterialTheme.colorScheme.primary else Color.Transparent)
+                    .clickable { onItemSelection(index) }
+                    .padding(vertical = 8.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = item,
+                    color = if (index == selectedIndex) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurface,
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.Bold
+                )
+            }
+        }
     }
 }
 

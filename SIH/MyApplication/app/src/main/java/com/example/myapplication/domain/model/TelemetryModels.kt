@@ -35,5 +35,10 @@ data class TelemetryData(
     val activeSTTProvider: String = "Vosk (Offline Default)",
     val activeTranslationProvider: String = "Sarvam Translator",
     val activeTTSProvider: String = "Offline TTS",
-    val activeEmotionDetector: String = "Rule-based Distress Engine"
+    val activeEmotionDetector: String = "Rule-based Distress Engine",
+    val sttWer: Float = 8.5f,
+    val ttsIntelligibilityMOS: Float = 4.4f,
+    val ttsNaturalnessMOS: Float = 4.1f,
+    val modelFlashSizeMb: Int = 135,
+    val rtf: Float = 0.45f
 )

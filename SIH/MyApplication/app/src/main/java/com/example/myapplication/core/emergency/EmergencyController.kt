@@ -11,7 +11,12 @@ import android.os.VibratorManager
 import com.example.myapplication.domain.model.EmergencyPreset
 import com.example.myapplication.domain.model.Priority
 
+import android.hardware.camera2.CameraManager
+import kotlinx.coroutines.*
+
 class EmergencyController(private val context: Context) {
+    private val scope = CoroutineScope(Dispatchers.Default + SupervisorJob())
+    private var flashlightJob: Job? = null
 
     private var activeRingtone: Ringtone? = null
     private var isEmergencyLatched: Boolean = false
@@ -53,6 +58,46 @@ class EmergencyController(private val context: Context) {
         } catch (e: Exception) {
             // Context simulated or non-hardware
         }
+        triggerFlashlightMorseSos()
+    }
+
+    private fun triggerFlashlightMorseSos() {
+        flashlightJob?.cancel()
+        flashlightJob = scope.launch {
+            try {
+                val cameraManager = context.getSystemService(Context.CAMERA_SERVICE) as? CameraManager
+                val cameraId = cameraManager?.cameraIdList?.firstOrNull { id ->
+                    cameraManager.getCameraCharacteristics(id).get(android.hardware.camera2.CameraCharacteristics.FLASH_INFO_AVAILABLE) == true
+                } ?: return@launch
+
+                val dot = 150L
+                val dash = 450L
+                val gap = 100L
+                val letterGap = 300L
+
+                val pattern = listOf(
+                    dot, gap, dot, gap, dot, letterGap,  // S
+                    dash, gap, dash, gap, dash, letterGap, // O
+                    dot, gap, dot, gap, dot               // S
+                )
+
+                // Flash SOS 3 times
+                repeat(3) {
+                    for (i in pattern.indices) {
+                        if (i % 2 == 0) {
+                            cameraManager.setTorchMode(cameraId, true)
+                            delay(pattern[i])
+                            cameraManager.setTorchMode(cameraId, false)
+                        } else {
+                            delay(pattern[i])
+                        }
+                    }
+                    delay(1000L)
+                }
+            } catch (e: Exception) {
+                // Ignore flashlight errors
+            }
+        }
     }
 
     fun startSiren() {
@@ -78,6 +123,7 @@ class EmergencyController(private val context: Context) {
             activeRingtone?.stop()
             activeRingtone = null
             isEmergencyLatched = false
+            flashlightJob?.cancel()
         } catch (e: Exception) {
             isEmergencyLatched = false
         }

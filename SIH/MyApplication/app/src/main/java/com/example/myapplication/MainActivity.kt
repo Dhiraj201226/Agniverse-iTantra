@@ -24,7 +24,7 @@ import com.example.myapplication.ui.theme.MyApplicationTheme
 
 enum class NavigationTab(val label: String, val icon: ImageVector) {
     COMMS("Comms", Icons.Default.Chat),
-    WALKIE_TALKIE("Radio", Icons.Default.Radio),
+    WALKIE_TALKIE("Home", Icons.Default.Home),
     EMERGENCY("SOS", Icons.Default.Warning),
     TELEMETRY("Metrics", Icons.Default.Analytics),
     SETTINGS("Models", Icons.Default.Settings)
