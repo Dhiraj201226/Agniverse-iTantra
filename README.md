@@ -40,13 +40,34 @@ By utilizing device-to-device Wi-Fi Direct and Bluetooth bridging, iTantra creat
 - **Replay Protection Engine:** Defends against packet replay attacks with a dynamic 24-hour timestamp window to accommodate offline clock-drift.
 - **Cryptographic Hashing:** Every packet is deduplicated and verified using SHA-based `AadHeader` integrity checks.
 
-### 6. Multilingual Indic AI
+### 6. Multilingual Indic AI & Speech Analytics
 - **On-Device Translation:** Real-time offline translation and speech integration between multiple Indic languages (Hindi, Tamil, Telugu, etc.) using lightweight SherpaONNX models.
+- **Emotion & Voice Profiling:** Analyzes acoustic signatures (Mel-Spectrograms) to detect user emotion and automatically identify distress in voice patterns without relying on explicit SOS button presses.
 - **Localized Emergency Prompts:** Incoming distress signals and critical messages are translated and spoken aloud natively in the receiver's configured language.
+
+### 7. Geo-Spatial Awareness
+- **Emergency Location Sharing:** Automatically broadcasts GPS coordinates (if available) or relative mesh-node proximity data during a critical SOS event so responders can physically locate the victim.
 
 ---
 
-## System Statistics & Performance Limits
+## 🆚 How it Differs from Existing Solutions
+
+| Feature | Agniverse iTantra | Zello / WhatsApp | Bridgefy / FireChat | Traditional Walkie-Talkies |
+| :--- | :--- | :--- | :--- | :--- |
+| **Internet Requirement** | **100% Offline** | Requires Internet | Offline | Offline |
+| **Audio Communication** | **Full-Duplex VoIP** | Full-Duplex | Half-Duplex (often text-only) | Half-Duplex (Push-to-Talk) |
+| **Data Types** | **Voice, Text, Telemetry, GPS** | Voice, Text, GPS | Mostly Text | Voice Only |
+| **Security** | **Cryptographic Hashing & Replay Protection** | E2E Encryption | Basic/Proprietary | Unencrypted (Public Frequencies)|
+| **Hardware Required** | **Standard Smartphone** | Standard Smartphone | Standard Smartphone | Specialized Hardware |
+| **Emergency Automation** | **Automated SOS Alarms & AI TTS** | None | None | None |
+
+Unlike standard internet apps, iTantra requires zero infrastructure. Unlike proprietary offline SDKs (like Bridgefy), iTantra uses a fully custom byte-level UDP datagram protocol over Wi-Fi Direct, allowing high-bandwidth, full-duplex voice streams rather than just slow text messages.
+
+---
+
+## ⏱️ System Statistics & Independent Metrics
+
+*(Note: These metrics are inherently bound by standard Android/Hardware limitations but showcase the protocol's optimized performance.)*
 
 | Metric | Performance / Limit |
 | :--- | :--- |
