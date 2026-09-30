@@ -7,7 +7,7 @@
 
 ---
 
-## 🚀 Overview
+## Overview
 
 **Agniverse iTantra** is a zero-infrastructure, fully offline Android application designed to provide robust communication in disaster zones, remote areas, and emergency situations where traditional cell towers and internet services have failed. 
 
@@ -15,34 +15,34 @@ By utilizing device-to-device Wi-Fi Direct and Bluetooth bridging, iTantra creat
 
 ---
 
-## ✨ Key Features
+## Key Features
 
-### 📡 1. True Offline Mesh Networking
+### 1. True Offline Mesh Networking
 - **Zero Internet Required:** Operates 100% offline. No cellular data, no backend servers, no cloud APIs.
 - **Store & Forward Routing:** Messages are intelligently routed through intermediate nodes (devices), extending the range of the network indefinitely as long as nodes are in proximity.
 - **Self-Healing Topology:** Automatically discovers nearby nodes and re-routes packets if a node drops out of the network.
 
-### 🎙️ 2. High-Fidelity Walkie Talkie
+### 2. High-Fidelity Walkie Talkie
 - **Full-Duplex VoIP:** Talk and listen simultaneously over the local mesh.
 - **Hardware-Accelerated Audio:** Directly interfaces with Android's `AudioRecord` and `AudioTrack` APIs, bypassing standard call limits to utilize the primary media speakers at maximum volume.
 - **Acoustic Echo Cancellation (AEC) & Noise Suppression (NS):** Explicit hardware-level AEC prevents screeching feedback loops, even when multiple devices are operating in the same room.
 
-### 🚨 3. Mission-Critical Emergency Protocol
+### 3. Mission-Critical Emergency Protocol
 - **Automated SOS Alarms:** Incoming critical alerts bypass system volume limits to trigger maximum-volume siren alarms automatically.
 - **Haptic Morse Code:** Devices vibrate the exact SOS morse code sequence upon receiving a distress signal.
 - **AI Text-To-Speech (TTS):** Incoming critical alerts are instantly spoken aloud by the AI TTS engine, ensuring users get the message even if they can't look at their screen.
 
-### 📊 4. Live Hardware Telemetry
+### 4. Live Hardware Telemetry
 - **Remote Battery Monitoring:** Real-time polling of hardware battery levels across all connected nodes in the mesh.
 - **System Diagnostics:** Know exactly who is running low on power before they disconnect from the network.
 
-### 🔐 5. Robust Security & Integrity
+### 5. Robust Security & Integrity
 - **Replay Protection Engine:** Defends against packet replay attacks with a dynamic 24-hour timestamp window to accommodate offline clock-drift.
 - **Cryptographic Hashing:** Every packet is deduplicated and verified using SHA-based `AadHeader` integrity checks.
 
 ---
 
-## ⏱️ System Statistics & Performance Limits
+## System Statistics & Performance Limits
 
 | Metric | Performance / Limit |
 | :--- | :--- |
@@ -55,7 +55,7 @@ By utilizing device-to-device Wi-Fi Direct and Bluetooth bridging, iTantra creat
 
 ---
 
-## 🛠️ Tech Stack & Architecture
+## Tech Stack & Architecture
 
 - **Language:** Kotlin (100%)
 - **Architecture:** MVVM (Model-View-ViewModel) + Coroutines for highly concurrent background I/O operations.
@@ -65,7 +65,7 @@ By utilizing device-to-device Wi-Fi Direct and Bluetooth bridging, iTantra creat
 
 ---
 
-## ⚙️ How to Build and Run
+## How to Build and Run
 
 1. Clone the repository to your local machine.
 2. Open the **`MyApplication`** folder in Android Studio.
@@ -78,5 +78,5 @@ By utilizing device-to-device Wi-Fi Direct and Bluetooth bridging, iTantra creat
 ---
 
 <div align="center">
-  <i>Built with ❤️ for the Smart India Hackathon.</i>
+  <i>Built with love for the Smart India Hackathon.</i>
 </div>
