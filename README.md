@@ -57,7 +57,7 @@ By utilizing device-to-device Wi-Fi Direct and Bluetooth bridging, iTantra creat
 - **Cryptographic Hashing:** Every packet is deduplicated and verified using SHA-based `AadHeader` integrity checks.
 
 ### 8. Geo-Spatial Awareness
-- **Emergency Location Sharing:** Automatically broadcasts GPS coordinates (if available) or relative mesh-node proximity data during a critical SOS event so responders can physically locate the victim.
+- **Manual Location Dispatch:** Users can manually input their physical address or landmark descriptions, which are then broadcasted across the entire mesh network during a critical SOS event, allowing responders to physically locate the victim even without GPS capabilities.
 
 ---
 
