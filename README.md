@@ -48,6 +48,9 @@ By utilizing device-to-device Wi-Fi Direct and Bluetooth bridging, iTantra creat
 ### 7. Geo-Spatial Awareness
 - **Emergency Location Sharing:** Automatically broadcasts GPS coordinates (if available) or relative mesh-node proximity data during a critical SOS event so responders can physically locate the victim.
 
+### 8. Ultra-Low Bandwidth Comms (STT to TTS)
+- **Compressed Text Transmission:** Voice input is converted to text (STT) locally, transmitted over the mesh as highly compressed bytes (taking a fraction of the bandwidth of raw audio), and synthesized back into voice (TTS) on the receiving end.
+
 ---
 
 ## 🆚 How it Differs from Existing Solutions
@@ -55,7 +58,7 @@ By utilizing device-to-device Wi-Fi Direct and Bluetooth bridging, iTantra creat
 | Feature | Agniverse iTantra | Zello / WhatsApp | Bridgefy / FireChat | Traditional Walkie-Talkies |
 | :--- | :--- | :--- | :--- | :--- |
 | **Internet Requirement** | **100% Offline** | Requires Internet | Offline | Offline |
-| **Audio Communication** | **Full-Duplex VoIP** | Full-Duplex | Half-Duplex (often text-only) | Half-Duplex (Push-to-Talk) |
+| **Audio Communication** | **Half & Full-Duplex VoIP** | Full-Duplex | Half-Duplex (often text-only) | Half-Duplex (Push-to-Talk) |
 | **Data Types** | **Voice, Text, Telemetry, GPS** | Voice, Text, GPS | Mostly Text | Voice Only |
 | **Security** | **Cryptographic Hashing & Replay Protection** | E2E Encryption | Basic/Proprietary | Unencrypted (Public Frequencies)|
 | **Hardware Required** | **Standard Smartphone** | Standard Smartphone | Standard Smartphone | Specialized Hardware |
@@ -65,9 +68,9 @@ Unlike standard internet apps, iTantra requires zero infrastructure. Unlike prop
 
 ---
 
-## ⏱️ System Statistics & Independent Metrics
+## ⏱️ Live System Metrics Display
 
-*(Note: These metrics are inherently bound by standard Android/Hardware limitations but showcase the protocol's optimized performance.)*
+*(Note: The application features a dedicated Telemetry UI that displays these live hardware and network metrics in real-time.)*
 
 | Metric | Performance / Limit |
 | :--- | :--- |
