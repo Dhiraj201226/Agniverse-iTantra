@@ -40,6 +40,10 @@ By utilizing device-to-device Wi-Fi Direct and Bluetooth bridging, iTantra creat
 - **Replay Protection Engine:** Defends against packet replay attacks with a dynamic 24-hour timestamp window to accommodate offline clock-drift.
 - **Cryptographic Hashing:** Every packet is deduplicated and verified using SHA-based `AadHeader` integrity checks.
 
+### 6. Multilingual Indic AI
+- **On-Device Translation:** Real-time offline translation and speech integration between multiple Indic languages (Hindi, Tamil, Telugu, etc.) using lightweight SherpaONNX models.
+- **Localized Emergency Prompts:** Incoming distress signals and critical messages are translated and spoken aloud natively in the receiver's configured language.
+
 ---
 
 ## System Statistics & Performance Limits
