@@ -17,39 +17,39 @@ By utilizing device-to-device Wi-Fi Direct and Bluetooth bridging, iTantra creat
 
 ## Key Features
 
-### 1. True Offline Mesh Networking
+### 1. Ultra-Low Bandwidth Comms (STT to TTS)
+- **Compressed Text Transmission:** Voice input is converted to text (STT) locally, transmitted over the mesh as highly compressed bytes (taking a fraction of the bandwidth of raw audio), and synthesized back into voice (TTS) on the receiving end.
+
+### 2. True Offline Mesh Networking
 - **Zero Internet Required:** Operates 100% offline. No cellular data, no backend servers, no cloud APIs.
 - **Store & Forward Routing:** Messages are intelligently routed through intermediate nodes (devices), extending the range of the network indefinitely as long as nodes are in proximity.
 - **Self-Healing Topology:** Automatically discovers nearby nodes and re-routes packets if a node drops out of the network.
 
-### 2. High-Fidelity Walkie Talkie
-- **Full-Duplex VoIP:** Talk and listen simultaneously over the local mesh.
-- **Hardware-Accelerated Audio:** Directly interfaces with Android's `AudioRecord` and `AudioTrack` APIs, bypassing standard call limits to utilize the primary media speakers at maximum volume.
-- **Acoustic Echo Cancellation (AEC) & Noise Suppression (NS):** Explicit hardware-level AEC prevents screeching feedback loops, even when multiple devices are operating in the same room.
-
-### 3. Mission-Critical Emergency Protocol
-- **Automated SOS Alarms:** Incoming critical alerts bypass system volume limits to trigger maximum-volume siren alarms automatically.
-- **Haptic Morse Code:** Devices vibrate the exact SOS morse code sequence upon receiving a distress signal.
-- **AI Text-To-Speech (TTS):** Incoming critical alerts are instantly spoken aloud by the AI TTS engine, ensuring users get the message even if they can't look at their screen.
-
-### 4. Live Hardware Telemetry
-- **Remote Battery Monitoring:** Real-time polling of hardware battery levels across all connected nodes in the mesh.
-- **System Diagnostics:** Know exactly who is running low on power before they disconnect from the network.
-
-### 5. Robust Security & Integrity
-- **Replay Protection Engine:** Defends against packet replay attacks with a dynamic 24-hour timestamp window to accommodate offline clock-drift.
-- **Cryptographic Hashing:** Every packet is deduplicated and verified using SHA-based `AadHeader` integrity checks.
-
-### 6. Multilingual Indic AI & Speech Analytics
+### 3. Multilingual Indic AI & Speech Analytics
 - **On-Device Translation:** Real-time offline translation and speech integration between multiple Indic languages (Hindi, Tamil, Telugu, etc.) using lightweight SherpaONNX models.
 - **Emotion & Voice Profiling:** Analyzes acoustic signatures (Mel-Spectrograms) to detect user emotion and automatically identify distress in voice patterns without relying on explicit SOS button presses.
 - **Localized Emergency Prompts:** Incoming distress signals and critical messages are translated and spoken aloud natively in the receiver's configured language.
 
-### 7. Geo-Spatial Awareness
-- **Emergency Location Sharing:** Automatically broadcasts GPS coordinates (if available) or relative mesh-node proximity data during a critical SOS event so responders can physically locate the victim.
+### 4. High-Fidelity Walkie Talkie
+- **Full-Duplex VoIP:** Talk and listen simultaneously over the local mesh.
+- **Hardware-Accelerated Audio:** Directly interfaces with Android's `AudioRecord` and `AudioTrack` APIs, bypassing standard call limits to utilize the primary media speakers at maximum volume.
+- **Acoustic Echo Cancellation (AEC) & Noise Suppression (NS):** Explicit hardware-level AEC prevents screeching feedback loops, even when multiple devices are operating in the same room.
 
-### 8. Ultra-Low Bandwidth Comms (STT to TTS)
-- **Compressed Text Transmission:** Voice input is converted to text (STT) locally, transmitted over the mesh as highly compressed bytes (taking a fraction of the bandwidth of raw audio), and synthesized back into voice (TTS) on the receiving end.
+### 5. Mission-Critical Emergency Protocol
+- **Automated SOS Alarms:** Incoming critical alerts bypass system volume limits to trigger maximum-volume siren alarms automatically.
+- **Haptic Morse Code:** Devices vibrate the exact SOS morse code sequence upon receiving a distress signal.
+- **AI Text-To-Speech (TTS):** Incoming critical alerts are instantly spoken aloud by the AI TTS engine, ensuring users get the message even if they can't look at their screen.
+
+### 6. Live Hardware Telemetry
+- **Remote Battery Monitoring:** Real-time polling of hardware battery levels across all connected nodes in the mesh.
+- **System Diagnostics:** Know exactly who is running low on power before they disconnect from the network.
+
+### 7. Robust Security & Integrity
+- **Replay Protection Engine:** Defends against packet replay attacks with a dynamic 24-hour timestamp window to accommodate offline clock-drift.
+- **Cryptographic Hashing:** Every packet is deduplicated and verified using SHA-based `AadHeader` integrity checks.
+
+### 8. Geo-Spatial Awareness
+- **Emergency Location Sharing:** Automatically broadcasts GPS coordinates (if available) or relative mesh-node proximity data during a critical SOS event so responders can physically locate the victim.
 
 ---
 
